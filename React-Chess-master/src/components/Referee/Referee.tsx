@@ -1,32 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { initialBoard } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { Board } from "../../models/Board";
 import { Pawn } from "../../models/Pawn";
-import {
-  bishopMove,
-  getPossibleBishopMoves,
-  getPossibleKingMoves,
-  getPossibleKnightMoves,
-  getPossiblePawnMoves,
-  getPossibleQueenMoves,
-  getPossibleRookMoves,
-  kingMove,
-  knightMove,
-  pawnMove,
-  queenMove,
-  rookMove,
-} from "../../referee/rules";
 import { PieceType, TeamType } from "../../Types";
 import Chessboard from "../Chessboard/Chessboard";
 import { Howl } from "howler";
 
 const moveSound = new Howl({
   src: ["/sounds/move-self.mp3"],
-});
-
-const captureSound = new Howl({
-  src: ["/sounds/capture.mp3"],
 });
 
 const checkmateSound = new Howl({
@@ -40,18 +22,14 @@ export default function Referee() {
   const checkmateModalRef = useRef<HTMLDivElement>(null);
 
   function playMove(playedPiece: Piece, destination: Position): boolean {
-    // If the playing piece doesn't have any moves return
     if (playedPiece.possibleMoves === undefined) return false;
 
-    // Prevent the inactive team from playing
     if (playedPiece.team === TeamType.OUR && board.totalTurns % 2 !== 1)
       return false;
     if (playedPiece.team === TeamType.OPPONENT && board.totalTurns % 2 !== 0)
       return false;
 
-    let playedMoveIsValid = false;
-
-    const validMove = playedPiece.possibleMoves?.some((m) =>
+    const validMove = playedPiece.possibleMoves.some((m) =>
       m.samePosition(destination)
     );
 
@@ -64,12 +42,12 @@ export default function Referee() {
       playedPiece.team
     );
 
-    // playMove modifies the board thus we
-    // need to call setBoard
-    setBoard(() => {
-      const clonedBoard = board.clone();
+    let playedMoveIsValid = false;
+
+    setBoard((previousBoard) => {
+      const clonedBoard = previousBoard.clone();
       clonedBoard.totalTurns += 1;
-      // Playing the move
+
       playedMoveIsValid = clonedBoard.playMove(
         enPassantMove,
         validMove,
@@ -89,16 +67,16 @@ export default function Referee() {
       return clonedBoard;
     });
 
-    // This is for promoting a pawn
-    let promotionRow = playedPiece.team === TeamType.OUR ? 7 : 0;
-
-    if (destination.y === promotionRow && playedPiece.isPawn) {
-      modalRef.current?.classList.remove("hidden");
-      setPromotionPawn((previousPromotionPawn) => {
-        const clonedPlayedPiece = playedPiece.clone();
-        clonedPlayedPiece.position = destination.clone();
-        return clonedPlayedPiece;
-      });
+    if (playedMoveIsValid && playedPiece.isPawn) {
+      const promotionRow = playedPiece.team === TeamType.OUR ? 7 : 0;
+      if (destination.y === promotionRow) {
+        modalRef.current?.classList.remove("hidden");
+        setPromotionPawn(() => {
+          const clonedPlayedPiece = playedPiece.clone();
+          clonedPlayedPiece.position = destination.clone();
+          return clonedPlayedPiece;
+        });
+      }
     }
 
     return playedMoveIsValid;
@@ -134,75 +112,13 @@ export default function Referee() {
     return false;
   }
 
-  //TODO
-  //Add stalemate!
-  function isValidMove(
-    initialPosition: Position,
-    desiredPosition: Position,
-    type: PieceType,
-    team: TeamType
-  ) {
-    let validMove = false;
-    switch (type) {
-      case PieceType.PAWN:
-        validMove = pawnMove(
-          initialPosition,
-          desiredPosition,
-          team,
-          board.pieces
-        );
-        break;
-      case PieceType.KNIGHT:
-        validMove = knightMove(
-          initialPosition,
-          desiredPosition,
-          team,
-          board.pieces
-        );
-        break;
-      case PieceType.BISHOP:
-        validMove = bishopMove(
-          initialPosition,
-          desiredPosition,
-          team,
-          board.pieces
-        );
-        break;
-      case PieceType.ROOK:
-        validMove = rookMove(
-          initialPosition,
-          desiredPosition,
-          team,
-          board.pieces
-        );
-        break;
-      case PieceType.QUEEN:
-        validMove = queenMove(
-          initialPosition,
-          desiredPosition,
-          team,
-          board.pieces
-        );
-        break;
-      case PieceType.KING:
-        validMove = kingMove(
-          initialPosition,
-          desiredPosition,
-          team,
-          board.pieces
-        );
-    }
-
-    return validMove;
-  }
-
   function promotePawn(pieceType: PieceType) {
     if (promotionPawn === undefined) {
       return;
     }
 
     setBoard((previousBoard) => {
-      const clonedBoard = board.clone();
+      const clonedBoard = previousBoard.clone();
       clonedBoard.pieces = clonedBoard.pieces.reduce((results, piece) => {
         if (piece.samePiecePosition(promotionPawn)) {
           results.push(
