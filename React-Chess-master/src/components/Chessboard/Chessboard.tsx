@@ -16,6 +16,7 @@ interface Props {
 export default function Chessboard({playMove, pieces} : Props) {
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
+  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,6 +63,19 @@ export default function Chessboard({playMove, pieces} : Props) {
     }
   }
 
+  function getBoardPosition(e: React.MouseEvent): Position | null {
+    const chessboard = chessboardRef.current;
+    if (!chessboard) return null;
+
+    const x = Math.floor((e.clientX - chessboard.offsetLeft) / GRID_SIZE);
+    const y = Math.abs(
+      Math.ceil((e.clientY - chessboard.offsetTop - 800) / GRID_SIZE)
+    );
+
+    if (x < 0 || x > 7 || y < 0 || y > 7) return null;
+    return new Position(x, y);
+  }
+
   function movePiece(e: React.MouseEvent) {
     const chessboard = chessboardRef.current;
     if (activePiece && chessboard) {
@@ -89,6 +103,38 @@ export default function Chessboard({playMove, pieces} : Props) {
         activePiece.style.top = `${y}px`;
       }
     }
+  }
+
+  function handleBoardClick(e: React.MouseEvent) {
+    const clickPosition = getBoardPosition(e);
+    if (!clickPosition) {
+      setSelectedPosition(null);
+      return;
+    }
+
+    const currentPiece = pieces.find((p) => p.samePosition(clickPosition));
+    const selectedPiece = selectedPosition
+      ? pieces.find((p) => p.samePosition(selectedPosition))
+      : undefined;
+
+    if (
+      selectedPiece?.possibleMoves?.some((move) =>
+        move.samePosition(clickPosition)
+      )
+    ) {
+      const didMove = playMove(selectedPiece.clone(), clickPosition);
+      if (didMove) {
+        setSelectedPosition(null);
+      }
+      return;
+    }
+
+    if (currentPiece) {
+      setSelectedPosition(new Position(clickPosition.x, clickPosition.y));
+      return;
+    }
+
+    setSelectedPosition(null);
   }
 
   function dropPiece(e: React.MouseEvent) {
@@ -126,9 +172,14 @@ export default function Chessboard({playMove, pieces} : Props) {
       );
       let image = piece ? piece.image : undefined;
 
-      let currentPiece = activePiece != null ? pieces.find(p => p.samePosition(grabPosition)) : undefined;
-      let highlight = currentPiece?.possibleMoves ? 
-      currentPiece.possibleMoves.some(p => p.samePosition(new Position(i, j))) : false;
+      let currentPiece = selectedPosition
+        ? pieces.find((p) => p.samePosition(selectedPosition))
+        : activePiece != null
+        ? pieces.find((p) => p.samePosition(grabPosition))
+        : undefined;
+      let highlight = currentPiece?.possibleMoves
+        ? currentPiece.possibleMoves.some((p) => p.samePosition(new Position(i, j)))
+        : false;
 
       board.push(<Tile key={`${j},${i}`} image={image} number={number} highlight={highlight} />);
     }
@@ -140,10 +191,12 @@ export default function Chessboard({playMove, pieces} : Props) {
         onMouseMove={(e) => movePiece(e)}
         onMouseDown={(e) => grabPiece(e)}
         onMouseUp={(e) => dropPiece(e)}
+        onClick={(e) => handleBoardClick(e)}
         onContextMenu={(e) => {
           if (activePiece) {
             resetActivePiece();
           }
+          setSelectedPosition(null);
           e.preventDefault();
         }}
         id="chessboard"
