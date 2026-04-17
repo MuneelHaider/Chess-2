@@ -2,60 +2,65 @@ import { Piece, Position } from "../../models";
 import { TeamType } from "../../Types";
 import { tileIsEmptyOrOccupiedByOpponent } from "./GeneralRules";
 
-export const knightMove = (initialPosition: Position, desiredPosition: Position, team: TeamType, boardState: Piece[]): boolean => {
-  for (let i = -1; i < 2; i += 2) {
-    for (let j = -1; j < 2; j += 2) {
-      //TOP AND BOTTOM SIDE MOVEMENT
-      if (desiredPosition.y - initialPosition.y === 2 * i) {
-        if (desiredPosition.x - initialPosition.x === j) {
-          if (
-            tileIsEmptyOrOccupiedByOpponent(
-              desiredPosition,
-              boardState,
-              team
-            )
-          ) {
-            return true;
-          }
-        }
-      }
+const KNIGHT_OFFSETS = [
+  { x: 1, y: 2 },
+  { x: 1, y: -2 },
+  { x: -1, y: 2 },
+  { x: -1, y: -2 },
+  { x: 2, y: 1 },
+  { x: 2, y: -1 },
+  { x: -2, y: 1 },
+  { x: -2, y: -1 },
+];
 
-      //RIGHT AND LEFT SIDE MOVEMENT
-      if (desiredPosition.x - initialPosition.x === 2 * i) {
-        if (desiredPosition.y - initialPosition.y === j) {
-          if (
-            tileIsEmptyOrOccupiedByOpponent(
-              desiredPosition,
-              boardState,
-              team
-            )
-          ) {
-            return true;
-          }
-        }
-      }
-    }
+const isWithinBoard = (position: Position): boolean =>
+  position.x >= 0 && position.x <= 7 && position.y >= 0 && position.y <= 7;
+
+export const knightMove = (
+  initialPosition: Position,
+  desiredPosition: Position,
+  team: TeamType,
+  boardState: Piece[]
+): boolean => {
+  if (!isWithinBoard(desiredPosition)) {
+    return false;
   }
-  return false;
-}
 
-export const getPossibleKnightMoves = (knight: Piece, boardstate: Piece[]): Position[] => {
+  const dx = desiredPosition.x - initialPosition.x;
+  const dy = desiredPosition.y - initialPosition.y;
+
+  const isKnightMove = KNIGHT_OFFSETS.some(
+    (offset) => offset.x === dx && offset.y === dy
+  );
+
+  return (
+    isKnightMove &&
+    tileIsEmptyOrOccupiedByOpponent(desiredPosition, boardState, team)
+  );
+};
+
+export const getPossibleKnightMoves = (
+  knight: Piece,
+  boardstate: Piece[]
+): Position[] => {
   const possibleMoves: Position[] = [];
 
-  for (let i = -1; i < 2; i += 2) {
-    for (let j = -1; j < 2; j += 2) {
-      const verticalMove = new Position(knight.position.x + j, knight.position.y + i * 2);
-      const horizontalMove = new Position(knight.position.x + i * 2, knight.position.y + j);
+  for (const offset of KNIGHT_OFFSETS) {
+    const destination = new Position(
+      knight.position.x + offset.x,
+      knight.position.y + offset.y
+    );
 
-      if(tileIsEmptyOrOccupiedByOpponent(verticalMove, boardstate, knight.team)) {
-        possibleMoves.push(verticalMove);
-      }
+    if (!isWithinBoard(destination)) {
+      continue;
+    }
 
-      if(tileIsEmptyOrOccupiedByOpponent(horizontalMove, boardstate, knight.team)) {
-        possibleMoves.push(horizontalMove);
-      }
+    if (
+      tileIsEmptyOrOccupiedByOpponent(destination, boardstate, knight.team)
+    ) {
+      possibleMoves.push(destination);
     }
   }
 
   return possibleMoves;
-}
+};
