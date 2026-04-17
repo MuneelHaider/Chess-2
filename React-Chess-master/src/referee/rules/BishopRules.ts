@@ -1,135 +1,89 @@
 import { Piece, Position } from "../../models";
 import { TeamType } from "../../Types";
-import { tileIsEmptyOrOccupiedByOpponent, tileIsOccupied, tileIsOccupiedByOpponent } from "./GeneralRules";
+import {
+  tileIsEmptyOrOccupiedByOpponent,
+  tileIsOccupied,
+  tileIsOccupiedByOpponent,
+} from "./GeneralRules";
 
-export const bishopMove = (initialPosition: Position, desiredPosition: Position, team: TeamType, boardState: Piece[]): boolean => {
-    for(let i = 1; i < 8; i++) {
-      //Up right movement
-      if(desiredPosition.x > initialPosition.x && desiredPosition.y > initialPosition.y) {
-        let passedPosition = new Position(initialPosition.x + i, initialPosition.y + i);
-        //Check if the tile is the destination tile
-        if(passedPosition.samePosition(desiredPosition)) {
-          //Dealing with destination tile
-          if(tileIsEmptyOrOccupiedByOpponent(passedPosition, boardState, team)) {
-            return true;
-          }
-        } else {
-          //Dealing with passing tile
-          if(tileIsOccupied(passedPosition, boardState)) {
-            break;
-          }
-        }
-      }
-        
-      //Bottom right movement
-      if(desiredPosition.x > initialPosition.x && desiredPosition.y < initialPosition.y) {
-        let passedPosition = new Position(initialPosition.x + i, initialPosition.y - i);
-        //Check if the tile is the destination tile
-        if(passedPosition.samePosition(desiredPosition)) {
-          //Dealing with destination tile
-          if(tileIsEmptyOrOccupiedByOpponent(passedPosition, boardState, team)) {
-            return true;
-          }
-        } else {
-          if(tileIsOccupied(passedPosition, boardState)) {
-            break;
-          }
-        }
-      }
+const BISHOP_DIRECTIONS = [
+  { x: 1, y: 1 },
+  { x: 1, y: -1 },
+  { x: -1, y: -1 },
+  { x: -1, y: 1 },
+];
 
-      //Bottom left movement
-      if(desiredPosition.x < initialPosition.x && desiredPosition.y < initialPosition.y) {
-        let passedPosition = new Position(initialPosition.x - i, initialPosition.y - i);
-        //Check if the tile is the destination tile
-        if(passedPosition.samePosition(desiredPosition)) {
-          //Dealing with destination tile
-          if(tileIsEmptyOrOccupiedByOpponent(passedPosition, boardState, team)) {
-            return true;
-          }
-        } else {
-          if(tileIsOccupied(passedPosition, boardState)) {
-            break;
-          }
-        }
-      }
+const isWithinBoard = (position: Position): boolean =>
+  position.x >= 0 && position.x <= 7 && position.y >= 0 && position.y <= 7;
 
-      //Top left movement
-      if(desiredPosition.x < initialPosition.x && desiredPosition.y > initialPosition.y) {
-        let passedPosition = new Position(initialPosition.x - i, initialPosition.y+i);
-        //Check if the tile is the destination tile
-        if(passedPosition.samePosition(desiredPosition)) {
-          //Dealing with destination tile
-          if(tileIsEmptyOrOccupiedByOpponent(passedPosition, boardState, team)) {
-            return true;
-          }
-        } else {
-          if(tileIsOccupied(passedPosition, boardState)) {
-            break;
-          }
-        }
-      }
-    }
+const isSameDiagonal = (from: Position, to: Position): boolean =>
+  Math.abs(to.x - from.x) === Math.abs(to.y - from.y);
+
+const getPathToDestination = (from: Position, to: Position): Position[] => {
+  const path: Position[] = [];
+  const stepX = Math.sign(to.x - from.x);
+  const stepY = Math.sign(to.y - from.y);
+
+  let current = new Position(from.x + stepX, from.y + stepY);
+  while (!current.samePosition(to)) {
+    path.push(current.clone());
+    current = new Position(current.x + stepX, current.y + stepY);
+  }
+
+  return path;
+};
+
+export const bishopMove = (
+  initialPosition: Position,
+  desiredPosition: Position,
+  team: TeamType,
+  boardState: Piece[]
+): boolean => {
+  if (!isSameDiagonal(initialPosition, desiredPosition)) {
     return false;
   }
 
-  export const getPossibleBishopMoves = (bishop: Piece, boardstate: Piece[]): Position[] => {
-    const possibleMoves: Position[] = [];
-
-    // Upper right movement
-    for(let i = 1; i < 8; i++) {
-      const destination = new Position(bishop.position.x + i, bishop.position.y + i);
-
-      if(!tileIsOccupied(destination, boardstate)) {
-        possibleMoves.push(destination);
-      } else if(tileIsOccupiedByOpponent(destination, boardstate, bishop.team)) {
-        possibleMoves.push(destination);
-        break;
-      } else {
-        break;
-      }
-    }
-
-    // Bottom right movement
-    for(let i = 1; i < 8; i++) {
-      const destination = new Position(bishop.position.x + i, bishop.position.y - i);
-
-      if(!tileIsOccupied(destination, boardstate)) {
-        possibleMoves.push(destination);
-      } else if(tileIsOccupiedByOpponent(destination, boardstate, bishop.team)) {
-        possibleMoves.push(destination);
-        break;
-      } else {
-        break;
-      }
-    }
-
-    // Bottom left movement
-    for(let i = 1; i < 8; i++) {
-      const destination = new Position(bishop.position.x - i, bishop.position.y - i);
-
-      if(!tileIsOccupied(destination, boardstate)) {
-        possibleMoves.push(destination);
-      } else if(tileIsOccupiedByOpponent(destination, boardstate, bishop.team)) {
-        possibleMoves.push(destination);
-        break;
-      } else {
-        break;
-      }
-    }
-
-    // Top left movement
-    for(let i = 1; i < 8; i++) {
-      const destination = new Position(bishop.position.x - i, bishop.position.y + i);
-
-      if(!tileIsOccupied(destination, boardstate)) {
-        possibleMoves.push(destination);
-      } else if(tileIsOccupiedByOpponent(destination, boardstate, bishop.team)) {
-        possibleMoves.push(destination);
-        break;
-      } else {
-        break;
-      }
-    }
-
-    return possibleMoves;
+  if (!isWithinBoard(desiredPosition)) {
+    return false;
   }
+
+  for (const position of getPathToDestination(initialPosition, desiredPosition)) {
+    if (tileIsOccupied(position, boardState)) {
+      return false;
+    }
+  }
+
+  return tileIsEmptyOrOccupiedByOpponent(desiredPosition, boardState, team);
+};
+
+export const getPossibleBishopMoves = (
+  bishop: Piece,
+  boardstate: Piece[]
+): Position[] => {
+  const possibleMoves: Position[] = [];
+
+  for (const direction of BISHOP_DIRECTIONS) {
+    let destination = new Position(
+      bishop.position.x + direction.x,
+      bishop.position.y + direction.y
+    );
+
+    while (isWithinBoard(destination)) {
+      if (!tileIsOccupied(destination, boardstate)) {
+        possibleMoves.push(destination.clone());
+      } else if (tileIsOccupiedByOpponent(destination, boardstate, bishop.team)) {
+        possibleMoves.push(destination.clone());
+        break;
+      } else {
+        break;
+      }
+
+      destination = new Position(
+        destination.x + direction.x,
+        destination.y + direction.y
+      );
+    }
+  }
+
+  return possibleMoves;
+};
