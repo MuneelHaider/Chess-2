@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./Chessboard.css";
 import Tile from "../Tile/Tile";
 import {
@@ -19,6 +19,15 @@ export default function Chessboard({playMove, pieces} : Props) {
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
 
+  const resetActivePiece = useCallback(() => {
+    if (activePiece) {
+      activePiece.style.position = "relative";
+      activePiece.style.removeProperty("top");
+      activePiece.style.removeProperty("left");
+      setActivePiece(null);
+    }
+  }, [activePiece]);
+
   useEffect(() => {
     const handleWindowMouseUp = () => {
       if (activePiece) {
@@ -28,16 +37,7 @@ export default function Chessboard({playMove, pieces} : Props) {
 
     window.addEventListener("mouseup", handleWindowMouseUp);
     return () => window.removeEventListener("mouseup", handleWindowMouseUp);
-  }, [activePiece]);
-
-  function resetActivePiece() {
-    if (activePiece) {
-      activePiece.style.position = "relative";
-      activePiece.style.removeProperty("top");
-      activePiece.style.removeProperty("left");
-      setActivePiece(null);
-    }
-  }
+  }, [activePiece, resetActivePiece]);
 
   function grabPiece(e: React.MouseEvent) {
     if (e.button !== 0) {
