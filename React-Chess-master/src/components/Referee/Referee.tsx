@@ -5,8 +5,9 @@ import { Board } from "../../models/Board";
 import { Pawn } from "../../models/Pawn";
 import { PieceType, TeamType } from "../../Types";
 import Chessboard from "../Chessboard/Chessboard";
+import GamePanel from "../GamePanel/GamePanel";
 import { Howl } from "howler";
-import { moveToAlgebraicNotation, formatMoveHistory } from "../../utils/algebraicNotation";
+import { moveToAlgebraicNotation } from "../../utils/algebraicNotation";
 
 const moveSound = new Howl({
   src: ["/sounds/move-self.mp3"],
@@ -175,6 +176,56 @@ export default function Referee() {
     setMoveHistory([]);
   }
 
+
+  const pieceValues: Record<PieceType, number> = {
+    [PieceType.PAWN]: 1,
+    [PieceType.KNIGHT]: 3,
+    [PieceType.BISHOP]: 3,
+    [PieceType.ROOK]: 5,
+    [PieceType.QUEEN]: 9,
+    [PieceType.KING]: 0,
+  };
+
+  const countPieces = (pieces: Piece[]) => {
+    return pieces.reduce<Record<PieceType, number>>((counts, piece) => {
+      counts[piece.type] = (counts[piece.type] || 0) + 1;
+      return counts;
+    }, {
+      [PieceType.PAWN]: 0,
+      [PieceType.KNIGHT]: 0,
+      [PieceType.BISHOP]: 0,
+      [PieceType.ROOK]: 0,
+      [PieceType.QUEEN]: 0,
+      [PieceType.KING]: 0,
+    });
+  };
+
+  const getCapturedPieces = (team: TeamType) => {
+    const initialCount = countPieces(initialBoard.pieces.filter((piece) => piece.team === team));
+    const currentCount = countPieces(board.pieces.filter((piece) => piece.team === team));
+
+    const captured: PieceType[] = [];
+    const types: PieceType[] = [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT, PieceType.PAWN];
+
+    types.forEach((type) => {
+      const amount = initialCount[type] - currentCount[type];
+      for (let i = 0; i < amount; i += 1) {
+        captured.push(type);
+      }
+    });
+
+    return captured;
+  };
+
+  const capturedByWhite = getCapturedPieces(TeamType.OPPONENT);
+  const capturedByBlack = getCapturedPieces(TeamType.OUR);
+
+  const capturedPointsByWhite = capturedByWhite.reduce((sum, type) => sum + pieceValues[type], 0);
+  const capturedPointsByBlack = capturedByBlack.reduce((sum, type) => sum + pieceValues[type], 0);
+
+  const pointLead = capturedPointsByWhite - capturedPointsByBlack;
+  const leadText = pointLead === 0 ? "Even" : pointLead > 0 ? `White +${pointLead}` : `Black +${Math.abs(pointLead)}`;
+
   const currentTeam = board.totalTurns % 2 === 1 ? TeamType.OUR : TeamType.OPPONENT;
   const isWhitesTurn = currentTeam === TeamType.OUR;
 
@@ -189,77 +240,14 @@ export default function Referee() {
           <div style={{ flexShrink: 0 }}>
             <Chessboard playMove={playMove} pieces={board.pieces} />
           </div>
-          <div
-            style={{
-              width: "320px",
-              minHeight: "800px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-              backgroundColor: "#1f1f1f",
-              border: "2px solid #444",
-              borderRadius: "10px",
-              padding: "16px",
-            }}
-          >
-            <div style={{ color: "white", fontSize: "18px", fontWeight: "bold", textAlign: "center" }}>
-              Game Panel
-            </div>
-            <div
-              style={{
-                backgroundColor: "#2a2a2a",
-                border: "2px solid #555",
-                borderRadius: "6px",
-                padding: "14px",
-                display: "flex",
-                flexDirection: "column",
-                minHeight: "620px",
-                maxHeight: "620px",
-              }}
-            >
-              <div style={{ color: "white", fontSize: "14px", fontWeight: "bold", marginBottom: "12px" }}>
-                Moves
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "40px 1fr 1fr",
-                  gap: "12px",
-                  marginBottom: "12px",
-                  color: "#fff",
-                  fontSize: "12px",
-                  fontWeight: "bold",
-                  textTransform: "uppercase",
-                }}
-              >
-                <div style={{ opacity: 0.7 }}></div>
-                <div>White</div>
-                <div>Black</div>
-              </div>
-              <div style={{ flex: 1, overflowY: "auto", color: "#ccc", fontSize: "12px", lineHeight: "1.8" }}>
-                {moveHistory.length === 0 ? (
-                  <div style={{ color: "#888" }}>No moves yet</div>
-                ) : (
-                  formatMoveHistory(moveHistory).map((row, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "40px 1fr 1fr",
-                        gap: "12px",
-                        padding: "4px 0",
-                        borderBottom: index < Math.ceil(moveHistory.length / 2) - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
-                      }}
-                    >
-                      <span style={{ color: "#fff", fontWeight: "bold" }}>{row[0]}</span>
-                      <span>{row[1]}</span>
-                      <span>{row[2]}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
+          <GamePanel
+            moveHistory={moveHistory}
+            capturedByWhite={capturedByWhite}
+            capturedByBlack={capturedByBlack}
+            capturedPointsByWhite={capturedPointsByWhite}
+            capturedPointsByBlack={capturedPointsByBlack}
+            leadText={leadText}
+          />
         </div>
       </div>
 
