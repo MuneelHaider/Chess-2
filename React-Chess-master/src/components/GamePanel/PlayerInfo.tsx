@@ -18,28 +18,47 @@ const piecePriority: Record<PieceType, number> = {
   [PieceType.KING]: 5,
 };
 
-const capturedPieceImages = (capturedPieces: PieceType[], team: TeamType) => {
-  const sortedPieces = [...capturedPieces].sort((a, b) => piecePriority[a] - piecePriority[b]);
-
-  return sortedPieces.map((type, index) => {
-    const isPawn = type === PieceType.PAWN;
-    const iconStyle = {
-      width: 18,
-      height: 18,
-      marginLeft: index === 0 ? 0 : isPawn ? -8 : 6,
-      zIndex: isPawn ? 100 - index : 1,
-      opacity: 0.95,
-    } as const;
-
-    return (
-      <img
-        key={`${type}-${index}`}
-        src={`/assets/images/${type}_${team}.png`}
-        alt={type}
-        style={iconStyle}
-      />
-    );
+const pieceGroups = (
+  capturedPieces: PieceType[],
+  team: TeamType
+): Array<{ type: PieceType; count: number }> => {
+  const counts = capturedPieces.reduce<Record<PieceType, number>>((groups, piece) => {
+    groups[piece] = (groups[piece] || 0) + 1;
+    return groups;
+  }, {
+    [PieceType.PAWN]: 0,
+    [PieceType.BISHOP]: 0,
+    [PieceType.KNIGHT]: 0,
+    [PieceType.ROOK]: 0,
+    [PieceType.QUEEN]: 0,
+    [PieceType.KING]: 0,
   });
+
+  return (Object.keys(counts) as PieceType[])
+    .sort((a, b) => piecePriority[a] - piecePriority[b])
+    .filter((type) => counts[type] > 0)
+    .map((type) => ({ type, count: counts[type] }));
+};
+
+const capturedPieceGroups = (capturedPieces: PieceType[], team: TeamType) => {
+  return pieceGroups(capturedPieces, team).map(({ type, count }) => (
+    <div key={type} style={{ display: "flex", alignItems: "center", marginRight: 8 }}>
+      {Array.from({ length: count }).map((_, index) => (
+        <img
+          key={`${type}-${index}`}
+          src={`/assets/images/${type}_${team}.png`}
+          alt={type}
+          style={{
+            width: 18,
+            height: 18,
+            marginLeft: index === 0 ? 0 : -8,
+            zIndex: 100 - index,
+            opacity: 0.95,
+          }}
+        />
+      ))}
+    </div>
+  ));
 };
 
 export default function PlayerInfo({
@@ -106,8 +125,8 @@ export default function PlayerInfo({
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
-            {capturedPieceImages(capturedPieces, capturedTeam)}
+          <div style={{ display: "flex", alignItems: "center", minWidth: 0, gap: 8 }}>
+            {capturedPieceGroups(capturedPieces, capturedTeam)}
           </div>
           {leadValue !== undefined && leadValue > 0 ? (
             <span
