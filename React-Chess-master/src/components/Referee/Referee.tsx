@@ -189,22 +189,37 @@ export default function Referee() {
           <div style={{ flexShrink: 0 }}>
             <Chessboard playMove={playMove} pieces={board.pieces} />
           </div>
-          <div style={{ width: "680px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div
+            style={{
+              width: "320px",
+              minHeight: "800px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              backgroundColor: "#1f1f1f",
+              border: "2px solid #444",
+              borderRadius: "10px",
+              padding: "16px",
+            }}
+          >
             <div style={{ color: "white", fontSize: "18px", fontWeight: "bold", textAlign: "center" }}>
-              Moves
+              Game Panel
             </div>
             <div
               style={{
-                flex: 1,
-                minHeight: "300px",
                 backgroundColor: "#2a2a2a",
                 border: "2px solid #555",
                 borderRadius: "6px",
-                padding: "16px",
+                padding: "14px",
                 display: "flex",
                 flexDirection: "column",
+                minHeight: "620px",
+                maxHeight: "620px",
               }}
             >
+              <div style={{ color: "white", fontSize: "14px", fontWeight: "bold", marginBottom: "12px" }}>
+                Moves
+              </div>
               <div
                 style={{
                   display: "grid",
@@ -233,7 +248,7 @@ export default function Referee() {
                         gridTemplateColumns: "40px 1fr 1fr",
                         gap: "12px",
                         padding: "4px 0",
-                        borderBottom: index < moveHistory.length / 2 - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                        borderBottom: index < Math.ceil(moveHistory.length / 2) - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
                       }}
                     >
                       <span style={{ color: "#fff", fontWeight: "bold" }}>{row[0]}</span>
