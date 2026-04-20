@@ -185,39 +185,59 @@ export default function Referee() {
           {isWhitesTurn ? "White's Turn" : "Black's Turn"}
         </p>
         
-        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
-          
-          {/* Chessboard */}
-          <div>
+        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", justifyContent: "center" }}>
+          <div style={{ flexShrink: 0 }}>
             <Chessboard playMove={playMove} pieces={board.pieces} />
           </div>
-          
-          {/* White player name and Move History */}
-          <div style={{ width: "120px", display: "flex", flexDirection: "column", gap: "10px" }}>
-            
-            {/* Move History Panel */}
+          <div style={{ width: "680px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ color: "white", fontSize: "18px", fontWeight: "bold", textAlign: "center" }}>
+              Moves
+            </div>
             <div
               style={{
+                flex: 1,
+                minHeight: "300px",
                 backgroundColor: "#2a2a2a",
                 border: "2px solid #555",
-                borderRadius: "4px",
-                padding: "12px",
-                maxHeight: "500px",
-                overflowY: "auto",
-                minHeight: "200px",
+                borderRadius: "6px",
+                padding: "16px",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              <div style={{ color: "white", fontSize: "12px", fontWeight: "bold", marginBottom: "8px" }}>
-                Moves
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "40px 1fr 1fr",
+                  gap: "12px",
+                  marginBottom: "12px",
+                  color: "#fff",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  textTransform: "uppercase",
+                }}
+              >
+                <div style={{ opacity: 0.7 }}></div>
+                <div>White</div>
+                <div>Black</div>
               </div>
-              <div style={{ fontSize: "11px", lineHeight: "1.6", color: "#ccc" }}>
+              <div style={{ flex: 1, overflowY: "auto", color: "#ccc", fontSize: "12px", lineHeight: "1.8" }}>
                 {moveHistory.length === 0 ? (
                   <div style={{ color: "#888" }}>No moves yet</div>
                 ) : (
                   formatMoveHistory(moveHistory).map((row, index) => (
-                    <div key={index} style={{ display: "flex", gap: "8px" }}>
-                      <span style={{ fontWeight: "bold", minWidth: "24px" }}>{row[0]}</span>
-                      <span style={{ minWidth: "40px" }}>{row[1]}</span>
+                    <div
+                      key={index}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "40px 1fr 1fr",
+                        gap: "12px",
+                        padding: "4px 0",
+                        borderBottom: index < moveHistory.length / 2 - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                      }}
+                    >
+                      <span style={{ color: "#fff", fontWeight: "bold" }}>{row[0]}</span>
+                      <span>{row[1]}</span>
                       <span>{row[2]}</span>
                     </div>
                   ))
