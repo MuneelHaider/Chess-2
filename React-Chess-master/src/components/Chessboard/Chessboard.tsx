@@ -18,6 +18,8 @@ export default function Chessboard({playMove, pieces} : Props) {
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
+  const ignoreNextClickRef = useRef(false);
+  const dragStartedRef = useRef(false);
 
   const resetActivePiece = useCallback(() => {
     if (activePiece) {
@@ -47,6 +49,9 @@ export default function Chessboard({playMove, pieces} : Props) {
     const element = e.target as HTMLElement;
     const chessboard = chessboardRef.current;
     if (element.classList.contains("chess-piece") && chessboard) {
+      setSelectedPosition(null);
+      dragStartedRef.current = false;
+
       const grabX = Math.floor((e.clientX - chessboard.offsetLeft) / GRID_SIZE);
       const grabY = Math.abs(
         Math.ceil((e.clientY - chessboard.offsetTop - 800) / GRID_SIZE)
@@ -79,6 +84,7 @@ export default function Chessboard({playMove, pieces} : Props) {
   function movePiece(e: React.MouseEvent) {
     const chessboard = chessboardRef.current;
     if (activePiece && chessboard) {
+      dragStartedRef.current = true;
       const minX = chessboard.offsetLeft - 25;
       const minY = chessboard.offsetTop - 25;
       const maxX = chessboard.offsetLeft + chessboard.clientWidth - 75;
@@ -106,6 +112,11 @@ export default function Chessboard({playMove, pieces} : Props) {
   }
 
   function handleBoardClick(e: React.MouseEvent) {
+    if (ignoreNextClickRef.current) {
+      ignoreNextClickRef.current = false;
+      return;
+    }
+
     const clickPosition = getBoardPosition(e);
     if (!clickPosition) {
       setSelectedPosition(null);
@@ -150,11 +161,16 @@ export default function Chessboard({playMove, pieces} : Props) {
       );
 
       if (currentPiece) {
-        const success = playMove(currentPiece.clone(), new Position(x, y));
+        if (dragStartedRef.current) {
+          const success = playMove(currentPiece.clone(), new Position(x, y));
 
-        if (!success) {
+          if (!success) {
+            resetActivePiece();
+          }
+
+          ignoreNextClickRef.current = true;
+        } else {
           resetActivePiece();
-          return;
         }
       }
 
