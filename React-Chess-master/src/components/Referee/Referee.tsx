@@ -186,10 +186,6 @@ export default function Referee() {
         </p>
         
         <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
-          {/* Black player name */}
-          <div style={{ width: "100px", textAlign: "center", color: "white", fontSize: "18px", fontWeight: "bold" }}>
-            Black
-          </div>
           
           {/* Chessboard */}
           <div>
@@ -198,9 +194,6 @@ export default function Referee() {
           
           {/* White player name and Move History */}
           <div style={{ width: "120px", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ textAlign: "center", color: "white", fontSize: "18px", fontWeight: "bold" }}>
-              White
-            </div>
             
             {/* Move History Panel */}
             <div
