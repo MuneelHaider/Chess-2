@@ -6,6 +6,7 @@ import { Pawn } from "../../models/Pawn";
 import { PieceType, TeamType } from "../../Types";
 import Chessboard from "../Chessboard/Chessboard";
 import { Howl } from "howler";
+import { moveToAlgebraicNotation, formatMoveHistory } from "../../utils/algebraicNotation";
 
 const moveSound = new Howl({
   src: ["/sounds/move-self.mp3"],
@@ -18,6 +19,7 @@ const checkmateSound = new Howl({
 export default function Referee() {
   const [board, setBoard] = useState<Board>(initialBoard.clone());
   const [promotionPawn, setPromotionPawn] = useState<Piece>();
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
   const checkmateModalRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +59,31 @@ export default function Referee() {
 
       if (playedMoveIsValid) {
         moveSound.play();
+
+        // Determine if there was a capture
+        const capturedPiece = previousBoard.pieces.find((p) =>
+          p.samePosition(destination)
+        );
+
+        // Check if it's a castling move
+        const isCastling =
+          playedPiece.isKing &&
+          capturedPiece?.isRook &&
+          capturedPiece.team === playedPiece.team;
+
+        // Convert move to algebraic notation
+        const notation = moveToAlgebraicNotation(
+          playedPiece,
+          playedPiece.position,
+          destination,
+          capturedPiece,
+          false,
+          undefined,
+          isCastling
+        );
+
+        // Add move to history
+        setMoveHistory((prevHistory) => [...prevHistory, notation]);
       }
 
       if (clonedBoard.winningTeam !== undefined) {
@@ -145,30 +172,90 @@ export default function Referee() {
   function restartGame() {
     checkmateModalRef.current?.classList.add("hidden");
     setBoard(initialBoard.clone());
+    setMoveHistory([]);
   }
+
+  const currentTeam = board.totalTurns % 2 === 1 ? TeamType.OUR : TeamType.OPPONENT;
+  const isWhitesTurn = currentTeam === TeamType.OUR;
 
   return (
     <>
-      <p style={{ color: "white", fontSize: "24px", textAlign: "center" }}>
-        Total turns: {board.totalTurns - 1}
-      </p>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+        <p style={{ color: "white", fontSize: "24px", fontWeight: "bold", margin: 0 }}>
+          {isWhitesTurn ? "White's Turn" : "Black's Turn"}
+        </p>
+        
+        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+          {/* Black player name */}
+          <div style={{ width: "100px", textAlign: "center", color: "white", fontSize: "18px", fontWeight: "bold" }}>
+            Black
+          </div>
+          
+          {/* Chessboard */}
+          <div>
+            <Chessboard playMove={playMove} pieces={board.pieces} />
+          </div>
+          
+          {/* White player name and Move History */}
+          <div style={{ width: "120px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ textAlign: "center", color: "white", fontSize: "18px", fontWeight: "bold" }}>
+              White
+            </div>
+            
+            {/* Move History Panel */}
+            <div
+              style={{
+                backgroundColor: "#2a2a2a",
+                border: "2px solid #555",
+                borderRadius: "4px",
+                padding: "12px",
+                maxHeight: "500px",
+                overflowY: "auto",
+                minHeight: "200px",
+              }}
+            >
+              <div style={{ color: "white", fontSize: "12px", fontWeight: "bold", marginBottom: "8px" }}>
+                Moves
+              </div>
+              <div style={{ fontSize: "11px", lineHeight: "1.6", color: "#ccc" }}>
+                {moveHistory.length === 0 ? (
+                  <div style={{ color: "#888" }}>No moves yet</div>
+                ) : (
+                  formatMoveHistory(moveHistory).map((row, index) => (
+                    <div key={index} style={{ display: "flex", gap: "8px" }}>
+                      <span style={{ fontWeight: "bold", minWidth: "24px" }}>{row[0]}</span>
+                      <span style={{ minWidth: "40px" }}>{row[1]}</span>
+                      <span>{row[2]}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="modal hidden" ref={modalRef}>
         <div className="modal-body">
           <img
             onClick={() => promotePawn(PieceType.ROOK)}
             src={`/assets/images/rook_${promotionTeamType()}.png`}
+            alt="Rook"
           />
           <img
             onClick={() => promotePawn(PieceType.BISHOP)}
             src={`/assets/images/bishop_${promotionTeamType()}.png`}
+            alt="Bishop"
           />
           <img
             onClick={() => promotePawn(PieceType.KNIGHT)}
             src={`/assets/images/knight_${promotionTeamType()}.png`}
+            alt="Knight"
           />
           <img
             onClick={() => promotePawn(PieceType.QUEEN)}
             src={`/assets/images/queen_${promotionTeamType()}.png`}
+            alt="Queen"
           />
         </div>
       </div>
@@ -183,7 +270,6 @@ export default function Referee() {
           </div>
         </div>
       </div>
-      <Chessboard playMove={playMove} pieces={board.pieces} />
     </>
   );
 }
