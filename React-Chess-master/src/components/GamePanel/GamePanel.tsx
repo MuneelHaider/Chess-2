@@ -10,6 +10,8 @@ interface GamePanelProps {
   capturedByBlack: PieceType[];
   capturedPointsByWhite: number;
   capturedPointsByBlack: number;
+  whiteLeadValue: number;
+  blackLeadValue: number;
   leadText: string;
 }
 
@@ -40,6 +42,8 @@ export default function GamePanel({
   capturedByBlack,
   capturedPointsByWhite,
   capturedPointsByBlack,
+  whiteLeadValue,
+  blackLeadValue,
   leadText,
 }: GamePanelProps) {
   const [players, setPlayers] = useState<PlayerProfile[]>([]);
@@ -96,12 +100,14 @@ export default function GamePanel({
             capturedPieces={capturedByWhite}
             capturedPoints={capturedPointsByWhite}
             capturedTeam={TeamType.OPPONENT}
+            leadValue={whiteLeadValue}
           />
           <PlayerInfo
             player={blackPlayer}
             capturedPieces={capturedByBlack}
             capturedPoints={capturedPointsByBlack}
             capturedTeam={TeamType.OUR}
+            leadValue={blackLeadValue}
           />
         </div>
 

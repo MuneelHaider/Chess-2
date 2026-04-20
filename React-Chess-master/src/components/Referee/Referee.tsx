@@ -246,6 +246,8 @@ export default function Referee() {
             capturedByBlack={capturedByBlack}
             capturedPointsByWhite={capturedPointsByWhite}
             capturedPointsByBlack={capturedPointsByBlack}
+            whiteLeadValue={pointLead > 0 ? pointLead : 0}
+            blackLeadValue={pointLead < 0 ? Math.abs(pointLead) : 0}
             leadText={leadText}
           />
         </div>

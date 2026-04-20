@@ -6,23 +6,48 @@ interface PlayerInfoProps {
   capturedPieces: PieceType[];
   capturedPoints: number;
   capturedTeam: TeamType;
+  leadValue?: number;
 }
 
-const capturedPieceImages = (capturedPieces: PieceType[], team: TeamType) =>
-  capturedPieces.map((type, index) => (
-    <img
-      key={`${type}-${index}`}
-      src={`/assets/images/${type}_${team}.png`}
-      alt={type}
-      style={{ width: 20, height: 20, marginRight: 4, opacity: 0.9 }}
-    />
-  ));
+const piecePriority: Record<PieceType, number> = {
+  [PieceType.PAWN]: 0,
+  [PieceType.BISHOP]: 1,
+  [PieceType.KNIGHT]: 2,
+  [PieceType.ROOK]: 3,
+  [PieceType.QUEEN]: 4,
+  [PieceType.KING]: 5,
+};
+
+const capturedPieceImages = (capturedPieces: PieceType[], team: TeamType) => {
+  const sortedPieces = [...capturedPieces].sort((a, b) => piecePriority[a] - piecePriority[b]);
+
+  return sortedPieces.map((type, index) => {
+    const isPawn = type === PieceType.PAWN;
+    const iconStyle = {
+      width: 18,
+      height: 18,
+      marginLeft: index === 0 ? 0 : isPawn ? -8 : 6,
+      zIndex: isPawn ? 100 - index : 1,
+      opacity: 0.95,
+    } as const;
+
+    return (
+      <img
+        key={`${type}-${index}`}
+        src={`/assets/images/${type}_${team}.png`}
+        alt={type}
+        style={iconStyle}
+      />
+    );
+  });
+};
 
 export default function PlayerInfo({
   player,
   capturedPieces,
   capturedPoints,
   capturedTeam,
+  leadValue,
 }: PlayerInfoProps) {
   return (
     <div
@@ -33,7 +58,7 @@ export default function PlayerInfo({
         backgroundColor: "#232323",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: "8px",
-        padding: "10px",
+        padding: "12px",
       }}
     >
       <div
@@ -61,28 +86,41 @@ export default function PlayerInfo({
           player.initials
         )}
       </div>
+
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ color: "#fff", fontWeight: "bold", fontSize: "14px" }}>
-          {player.name}
-        </div>
-        <div style={{ color: "#ccc", fontSize: "12px", marginTop: "4px" }}>
-          {player.elo} • {player.countryFlag} {player.region}
-        </div>
         <div
           style={{
-            color: "#ccc",
-            fontSize: "12px",
-            marginTop: "6px",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            flexWrap: "wrap",
+            color: "#fff",
+            fontWeight: "bold",
+            fontSize: "14px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
-          <span style={{ fontWeight: "bold", color: "#fff" }}>
-            Captured {capturedPieces.length} ({capturedPoints})
-          </span>
-          {capturedPieceImages(capturedPieces, capturedTeam)}
+          {player.name} ({player.elo})
+        </div>
+        <div style={{ color: "#ccc", fontSize: "12px", marginTop: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+          {player.countryFlag && <span>{player.countryFlag}</span>}
+          <span>{player.region}</span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
+            {capturedPieceImages(capturedPieces, capturedTeam)}
+          </div>
+          {leadValue !== undefined && leadValue > 0 ? (
+            <span
+              style={{
+                color: "#9df29d",
+                fontWeight: "bold",
+                fontSize: "12px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              +{leadValue}
+            </span>
+          ) : null}
         </div>
       </div>
     </div>
